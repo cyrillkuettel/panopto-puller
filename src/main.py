@@ -144,7 +144,7 @@ class Window(QWidget):
                     data = f.read()
                     self.cookie.cookie_data = data
                     f.close()
-                self.cookie.cookies_file_path = cookie_file
+                self.cookie.absolute_file_path = cookie_file
                 self.status_info_label.setText(f'Cookies file loaded: {selected_Files[0]}')
                 self.status_info_label.setStyleSheet('color: green')
             else:

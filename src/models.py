@@ -1,3 +1,5 @@
+
+
 class Cookie:
     """
     Class for storing the cookie temporarily.
