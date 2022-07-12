@@ -9,7 +9,7 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QApplication, QWidget
 from PyQt6.QtWidgets import QPushButton, QLabel, QLineEdit, QProgressBar, QVBoxLayout, QHBoxLayout, QFileDialog
 
-from src.models import Cookie
+from models import Cookie
 
 logging.basicConfig(level=logging.DEBUG)
 Log = logging.getLogger(__name__)
@@ -157,7 +157,8 @@ class Window(QWidget):
         self.btn_cookies.clicked.connect(self.open_cookie_file)
 
 
-if __name__ == '__main__':
+def main():
+    global application_path, app
     try:
         os.chdir(os.path.dirname(__file__))
         QDir.addSearchPath('icons', '../icons/')
@@ -175,3 +176,7 @@ if __name__ == '__main__':
         sys.exit(app.exec())
     except SystemExit as e:
         Log.error(f'Exit with return code: {e}')
+
+
+if __name__ == '__main__':
+    main()
