@@ -1,6 +1,6 @@
 import os
 import sys
-
+import logging
 import yt_dlp
 from PyQt6.QtGui import QIcon
 from PyQt6.QtCore import QThread, QDir
@@ -8,21 +8,25 @@ from PyQt6.QtWidgets import QApplication, QWidget, QFileDialog
 from PyQt6.QtWidgets import QPushButton, QLabel, QLineEdit, QProgressBar, QVBoxLayout, QHBoxLayout, QFileDialog
 from PyQt6.QtCore import *
 
+logging.basicConfig(level=logging.DEBUG)
+Log = logging.getLogger(__name__)
+
 
 class Window(QWidget):
     def __init__(self):
         super().__init__()
 
+        self.cookies_file = None  # The cookie file is later passed to the youtube-dl library
         self.status_label_url = None  # Shows information abou tthe curent state
-        self.cookies_file = None  # Essential for the tool to work.
 
         self.thread = QThread()
-        self.thread.started.connect(self.download)
+        self.thread.started.connect(self.start_download)  # well, is this really the way to go
 
-        self.createWindow()
-        self.createWidgetsAndSetLayout()
+        self.create_window()
+        self.create_widgets_and_layout()
+        self.setupOnClickListeners()
 
-    def createWindow(self):
+    def create_window(self):
         global app
 
         self.setWindowTitle('Panopto Downloader')
@@ -36,7 +40,7 @@ class Window(QWidget):
         frame.moveCenter(app.primaryScreen().availableGeometry().center())
         self.move(frame.topLeft())
 
-    def createWidgetsAndSetLayout(self):  # create widgets and set layout
+    def create_widgets_and_layout(self):
         global application_path
 
         # v box init
@@ -45,26 +49,22 @@ class Window(QWidget):
         # line 1
         label_url = QLabel('URL', self)
         self.le_url = QLineEdit()
-        btn_cookies = QPushButton()
-        btn_cookies.setIcon(QIcon('icons:cookies.ico'))
-        btn_file_path = QPushButton()
-        btn_file_path.setIcon(QIcon('icons:choose-file-icon-16.png'))
 
-        btn_file_path.clicked.connect(self.chooseFilePath)
-        self.le_file_path = QLineEdit(application_path)
-        self.le_file_path.setMaximumWidth(200)
-
+        self.btn_cookies = QPushButton()
+        self.btn_cookies.setIcon(QIcon('icons:cookies.ico'))
+        self.btn_file_path = QPushButton()
+        self.btn_file_path.setIcon(QIcon('icons:choose-file-icon-16.png'))
         self.btn_download = QPushButton('Download', self)
-        self.btn_download.clicked.connect(self.onClickDownloadButton)
+        self.le_file_path = QLineEdit(application_path)
 
+        self.le_file_path.setMaximumWidth(200)
         h_box1 = QHBoxLayout()
         h_box1.addWidget(label_url)
         h_box1.addWidget(self.le_url)
-        h_box1.addWidget(btn_cookies)
+        h_box1.addWidget(self.btn_cookies)
         h_box1.addWidget(self.le_file_path)
-        h_box1.addWidget(btn_file_path)
+        h_box1.addWidget(self.btn_file_path)
         h_box1.addWidget(self.btn_download)
-
         v_box.addLayout(h_box1)
 
         # line 2
@@ -81,18 +81,16 @@ class Window(QWidget):
         self.status_label_url.setAlignment(Qt.AlignmentFlag.AlignCenter)
         h_box3.addWidget(self.status_label_url)
         v_box.addLayout(h_box3)
-
-
         self.setLayout(v_box)
 
-    def chooseFilePath(self):
+    def choose_download_destination(self):
         file_path = QFileDialog.getExistingDirectory()
         self.le_file_path.setText(file_path)
 
-    def onClickDownloadButton(self):
+    def on_click_download_button(self):
         self.thread.start()
 
-    def download(self):
+    def start_download(self):
         ydl_opts = {'outtmpl': self.le_file_path.text() + '/%(title)s.%(ext)s', 'progress_hooks': [self.pHook],
                     'quiet': True, 'no_warnings': True, 'nocheckcertificate': True, 'format': 'best'}
 
@@ -107,7 +105,7 @@ class Window(QWidget):
             self.btn_download.setEnabled(True)
             self.thread.terminate()
 
-    def pHook(self, d):
+    def pHook(self, d):  # yt-dlp callback
         if d['status'] == 'downloading':
             percentage = int(float(d['_percent_str'].strip()[:-1]))
             self.progress_bar.setValue(percentage)
@@ -116,16 +114,29 @@ class Window(QWidget):
             print('download completed')
 
     def open_cookies_file(self):
+        filters = ["Text Files (*.txt)"]
         dialog = QFileDialog()
-        # dialog.setNameFilters(["Log files (*.log)"])
-        dialog.setFileMode(QFileDialog.AcceptMode.AcceptOpen)
+        dialog.setFileMode(QFileDialog.FileMode.AnyFile)
+        dialog.setWindowTitle("Open cookies.txt...")
+        dialog.setNameFilters(filters)
 
-        def fileSelected(file):
-            # Instead of printing, save it in a config in your plugin
-            print(file)
+        if dialog.exec():
+            file_name = dialog.selectedFiles()
 
-        dialog.fileSelected.connect(fileSelected)
-        dialog.show()  # Select a directory
+            if file_name[0].endswith('.txt'):
+                with open(file_name[0], 'r') as f:
+                    data = f.read()
+                    self.cookies_file = data
+                    f.close()
+            else:
+                Log.error('File is not a text file')
+                pass
+
+    # noinspection PyUnresolvedReferences
+    def setupOnClickListeners(self):
+        self.btn_file_path.clicked.connect(self.choose_download_destination)
+        self.btn_download.clicked.connect(self.on_click_download_button)
+        self.btn_cookies.clicked.connect(self.open_cookies_file)
 
 
 if __name__ == '__main__':
@@ -145,4 +156,4 @@ if __name__ == '__main__':
         window.show()
         sys.exit(app.exec())
     except SystemExit as e:
-        print(f'Exit with return code: {e}')
+        Log.error(f'Exit with return code: {e}')

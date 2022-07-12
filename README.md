@@ -10,5 +10,5 @@ A minmalist UI for yt-dlp (youtube-dl) written in PyQt.
 conda create -y --name panopto-puller python=3.10
 conda activate panopto-puller
 conda install pip
-pip install -r requirements
+pip install -r requirements.txt
 ```
