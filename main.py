@@ -5,7 +5,7 @@ import yt_dlp
 from PyQt6.QtGui import QIcon
 from PyQt6.QtCore import QThread, QDir
 from PyQt6.QtWidgets import QApplication, QWidget, QFileDialog
-from PyQt6.QtWidgets import QPushButton, QLabel, QLineEdit, QProgressBar, QVBoxLayout, QHBoxLayout
+from PyQt6.QtWidgets import QPushButton, QLabel, QLineEdit, QProgressBar, QVBoxLayout, QHBoxLayout, QFileDialog
 from PyQt6.QtCore import *
 
 
@@ -13,7 +13,9 @@ class Window(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.label_url = None
+        self.status_label_url = None  # Shows information abou tthe curent state
+        self.cookies_file = None  # Essential for the tool to work.
+
         self.thread = QThread()
         self.thread.started.connect(self.download)
 
@@ -75,9 +77,9 @@ class Window(QWidget):
 
         # line 3 (printing status information)
         h_box3 = QHBoxLayout()
-        self.label_url = QLabel('', self)
-        self.label_url.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        h_box3.addWidget(self.label_url)
+        self.status_label_url = QLabel('', self)
+        self.status_label_url.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        h_box3.addWidget(self.status_label_url)
         v_box.addLayout(h_box3)
 
 
@@ -112,6 +114,18 @@ class Window(QWidget):
         elif d['status'] == 'finished':
             self.progress_bar.setValue(100)
             print('download completed')
+
+    def open_cookies_file(self):
+        dialog = QFileDialog()
+        # dialog.setNameFilters(["Log files (*.log)"])
+        dialog.setFileMode(QFileDialog.AcceptMode.AcceptOpen)
+
+        def fileSelected(file):
+            # Instead of printing, save it in a config in your plugin
+            print(file)
+
+        dialog.fileSelected.connect(fileSelected)
+        dialog.show()  # Select a directory
 
 
 if __name__ == '__main__':
