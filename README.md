@@ -2,5 +2,13 @@
 A minmalist UI for yt-dlp (youtube-dl) written in PyQt.
 
 # Start local dev environment
-1. Use a virtual environment, tested with Python=3.10
-2. pip install -r requirements.txt
+- Use a virtual environment, tested with Python=3.10
+- pip install -r requirements.txt  
+
+ ```bash 
+ # For example with conda:
+conda create -y --name panopto-puller python=3.10
+conda activate panopto-puller
+conda install pip
+pip install -r requirements
+```
