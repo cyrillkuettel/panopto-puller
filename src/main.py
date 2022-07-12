@@ -1,12 +1,15 @@
+import logging
 import os
 import sys
-import logging
+
 import yt_dlp
-from PyQt6.QtGui import QIcon
-from PyQt6.QtCore import QThread, QDir
-from PyQt6.QtWidgets import QApplication, QWidget, QFileDialog
-from PyQt6.QtWidgets import QPushButton, QLabel, QLineEdit, QProgressBar, QVBoxLayout, QHBoxLayout, QFileDialog
 from PyQt6.QtCore import *
+from PyQt6.QtCore import QThread
+from PyQt6.QtGui import QIcon
+from PyQt6.QtWidgets import QApplication, QWidget
+from PyQt6.QtWidgets import QPushButton, QLabel, QLineEdit, QProgressBar, QVBoxLayout, QHBoxLayout, QFileDialog
+
+from src.models import Cookie
 
 logging.basicConfig(level=logging.DEBUG)
 Log = logging.getLogger(__name__)
@@ -15,12 +18,17 @@ Log = logging.getLogger(__name__)
 class Window(QWidget):
     def __init__(self):
         super().__init__()
-
-        self.cookies_file = None  # The cookie file is later passed to the youtube-dl library
-        self.status_label_url = None  # Shows information abou tthe curent state
+        self.le_file_path = None
+        self.btn_download = None
+        self.btn_file_path = None
+        self.btn_cookies = None
+        self.le_url = None
+        self.progress_bar = None
+        self.status_info_label = None  # Shows information abou the curent state
 
         self.thread = QThread()
         self.thread.started.connect(self.start_download)  # well, is this really the way to go
+        self.cookie = None
 
         self.create_window()
         self.create_widgets_and_layout()
@@ -77,9 +85,9 @@ class Window(QWidget):
 
         # line 3 (printing status information)
         h_box3 = QHBoxLayout()
-        self.status_label_url = QLabel('', self)
-        self.status_label_url.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        h_box3.addWidget(self.status_label_url)
+        self.status_info_label = QLabel('', self)
+        self.status_info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        h_box3.addWidget(self.status_info_label)
         v_box.addLayout(h_box3)
         self.setLayout(v_box)
 
@@ -91,15 +99,23 @@ class Window(QWidget):
         self.thread.start()
 
     def start_download(self):
+        if self.cookie is None:
+            self.status_info_label.setText('No cookies file loaded')
+            self.status_info_label.setStyleSheet('color: red')
+            Log.error("Need to provide a cookie")
+            return
+
         ydl_opts = {'outtmpl': self.le_file_path.text() + '/%(title)s.%(ext)s', 'progress_hooks': [self.pHook],
-                    'quiet': True, 'no_warnings': True, 'nocheckcertificate': True, 'format': 'best'}
+                    'quiet': True, 'no_warnings': True, 'nocheckcertificate': True, 'format': 'best',
+                    'cookies': self.cookie.absolute_file_path}
 
         try:
-            print(f'download from {self.le_url.text()}')
+            self.status_info_label.setText(f'download from {self.le_url.text()}')
             self.btn_download.setEnabled(False)
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([self.le_url.text()])
         except yt_dlp.utils.DownloadError or Exception as e:
+            self.status_info_label.setText(f'Error: {e}')
             self.progress_bar.setValue(0)
         finally:
             self.btn_download.setEnabled(True)
@@ -113,36 +129,38 @@ class Window(QWidget):
             self.progress_bar.setValue(100)
             print('download completed')
 
-    def open_cookies_file(self):
-        filters = ["Text Files (*.txt)"]
+    def open_cookie_file(self):
         dialog = QFileDialog()
         dialog.setFileMode(QFileDialog.FileMode.AnyFile)
-        dialog.setWindowTitle("Open cookies.txt...")
-        dialog.setNameFilters(filters)
+        dialog.setWindowTitle("Open cookies.txt")
+        dialog.setNameFilters(["Text Files (*.txt)"])
 
         if dialog.exec():
-            file_name = dialog.selectedFiles()
-
-            if file_name[0].endswith('.txt'):
-                with open(file_name[0], 'r') as f:
+            selected_Files = dialog.selectedFiles()
+            cookie_file = selected_Files[0]
+            if cookie_file.lower().endswith('.txt'):
+                self.cookie = Cookie()
+                with open(cookie_file, 'r') as f:
                     data = f.read()
-                    self.cookies_file = data
+                    self.cookie.cookie_data = data
                     f.close()
+                self.cookie.cookies_file_path = cookie_file
+                self.status_info_label.setText(f'Cookies file loaded: {selected_Files[0]}')
+                self.status_info_label.setStyleSheet('color: green')
             else:
-                Log.error('File is not a text file')
-                pass
+                Log.error('Failed to load file. Is it actually a text file?')
 
     # noinspection PyUnresolvedReferences
     def setupOnClickListeners(self):
         self.btn_file_path.clicked.connect(self.choose_download_destination)
         self.btn_download.clicked.connect(self.on_click_download_button)
-        self.btn_cookies.clicked.connect(self.open_cookies_file)
+        self.btn_cookies.clicked.connect(self.open_cookie_file)
 
 
 if __name__ == '__main__':
     try:
         os.chdir(os.path.dirname(__file__))
-        QDir.addSearchPath('icons', 'icons/')
+        QDir.addSearchPath('icons', '../icons/')
 
         if getattr(sys, 'frozen', False):  # for pyinstaller
             application_path = os.path.dirname(sys.executable)
