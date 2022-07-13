@@ -1,7 +1,8 @@
 import logging
-import os
 import sys
-
+import os
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))  # To work running from everywhere, PYTHONPATH needs to be inserted
 import yt_dlp
 from PyQt6.QtCore import *
 from PyQt6.QtCore import QThread
@@ -37,11 +38,17 @@ class Window(QWidget):
     def create_window(self):
         global app
 
+
         self.setWindowTitle('Panopto Downloader')
         self.setWindowIcon(QIcon('icons:flat.png'))
-
-        width = int(app.primaryScreen().size().width() * 0.42)
-        height = int(app.primaryScreen().size().height() * 0.089)
+        if not app:
+            width = int(app.primaryScreen().size().width() * 0.42)
+            height = int(app.primaryScreen().size().height() * 0.089)
+        else:
+            width = int(app.primaryScreen().size().width() * 0.42)
+            height = int(app.primaryScreen().size().height() * 0.089)
+        Log.info(width)
+        Log.info(height)
         self.setFixedSize(width, height)
 
         frame = self.frameGeometry()
