@@ -9,7 +9,7 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QApplication, QWidget
 from PyQt6.QtWidgets import QPushButton, QLabel, QLineEdit, QProgressBar, QVBoxLayout, QHBoxLayout, QFileDialog
 
-from models import Cookie
+from src.models import Cookie
 
 logging.basicConfig(level=logging.DEBUG)
 Log = logging.getLogger(__name__)
@@ -24,15 +24,15 @@ class Window(QWidget):
         self.btn_cookies = None
         self.le_url = None
         self.progress_bar = None
-        self.status_info_label = None  # Shows information abou the curent state
+        self.status_info_label = None  # Shows information about the curent state
 
         self.thread = QThread()
-        self.thread.started.connect(self.start_download)  # well, is this really the way to go
+        self.thread.started.connect(self.start_download)
         self.cookie = None
 
         self.create_window()
         self.create_widgets_and_layout()
-        self.setupOnClickListeners()
+        self.setup_onclick_listeners()
 
     def create_window(self):
         global app
@@ -50,24 +50,20 @@ class Window(QWidget):
 
     def create_widgets_and_layout(self):
         global application_path
-
-        # v box init
         v_box = QVBoxLayout()
 
         # line 1
-        label_url = QLabel('URL', self)
-        self.le_url = QLineEdit()
-
+        self.label_url = QLabel('URL', self)
         self.btn_cookies = QPushButton()
         self.btn_cookies.setIcon(QIcon('icons:cookies.ico'))
         self.btn_file_path = QPushButton()
         self.btn_file_path.setIcon(QIcon('icons:choose-file-icon-16.png'))
         self.btn_download = QPushButton('Download', self)
         self.le_file_path = QLineEdit(application_path)
-
         self.le_file_path.setMaximumWidth(200)
+        self.le_url = QLineEdit()
         h_box1 = QHBoxLayout()
-        h_box1.addWidget(label_url)
+        h_box1.addWidget(self.label_url)
         h_box1.addWidget(self.le_url)
         h_box1.addWidget(self.btn_cookies)
         h_box1.addWidget(self.le_file_path)
@@ -77,8 +73,9 @@ class Window(QWidget):
 
         # line 2
         h_box2 = QHBoxLayout()
-        self.progress_bar = QProgressBar()
+        self.progress_bar: QProgressBar = QProgressBar()
         self.progress_bar.setValue(0)
+        self.progress_bar.setMaximum(1000)
         h_box2.addWidget(self.progress_bar)
         v_box.addLayout(h_box2)
         v_box.addStretch()
@@ -96,14 +93,22 @@ class Window(QWidget):
         self.le_file_path.setText(file_path)
 
     def on_click_download_button(self):
-        self.thread.start()
+        if self.all_input_valid():
+            self.thread.start()
 
-    def start_download(self):
+    def all_input_valid(self):
         if self.cookie is None:
             self.status_info_label.setText('No cookies file loaded')
             self.status_info_label.setStyleSheet('color: red')
             Log.error("Need to provide a cookie")
-            return
+            return False
+        if self.le_url.text() == '':
+            Log.error("No URL provided")
+            self.status_info_label.setText('No URL provided')
+            return False
+        return True
+
+    def start_download(self):
 
         ydl_opts = {'outtmpl': self.le_file_path.text() + '/%(title)s.%(ext)s', 'progress_hooks': [self.pHook],
                     'quiet': True, 'no_warnings': True, 'nocheckcertificate': True, 'format': 'best',
@@ -123,42 +128,67 @@ class Window(QWidget):
 
     def pHook(self, d):  # yt-dlp callback
         if d['status'] == 'downloading':
-            percentage = int(float(d['_percent_str'].strip()[:-1]))
-            self.progress_bar.setValue(percentage)
+            self.parse_json_and_update_progressbar(d)
+
         elif d['status'] == 'finished':
             self.progress_bar.setValue(100)
             print('download completed')
 
-    def open_cookie_file(self):
-        dialog = QFileDialog()
-        dialog.setFileMode(QFileDialog.FileMode.AnyFile)
-        dialog.setWindowTitle("Open cookies.txt")
-        dialog.setNameFilters(["Text Files (*.txt)"])
+    def parse_json_and_update_progressbar(self, d):
+        """
 
-        if dialog.exec():
-            selected_Files = dialog.selectedFiles()
-            cookie_file = selected_Files[0]
-            if cookie_file.lower().endswith('.txt'):
-                self.cookie = Cookie()
-                with open(cookie_file, 'r') as f:
-                    data = f.read()
-                    self.cookie.cookie_data = data
-                    f.close()
-                self.cookie.absolute_file_path = cookie_file
-                self.status_info_label.setText(f'Cookies file loaded: {selected_Files[0]}')
-                self.status_info_label.setStyleSheet('color: green')
-            else:
-                Log.error('Failed to load file. Is it actually a text file?')
+        :param d: Current progress hook from youtube-dl (information in json)
+        :return: The value to be written in the progress bar
+        """
+        with open('../tests/d.json', 'w') as f:
+            import json
+            f.write(json.dumps(d))
+            f.close()
+        extracted_string = d['_percent_str'].strip()[:-2]
+        print(extracted_string)
+        try:
+            new_value = float(extracted_string) * 10
+            self.progress_bar.setValue(new_value)
+        except ValueError:
+            Log.error("Value Error: Not a float")
+
+    def open_cookie_file(self):
+        try:
+            dialog = QFileDialog()
+            dialog.setFileMode(QFileDialog.FileMode.AnyFile)
+            dialog.setWindowTitle("Open cookies.txt")
+            dialog.setNameFilters(["Text Files (*.txt)"])
+
+            if dialog.exec():
+                selected_Files = dialog.selectedFiles()
+                cookie_file = selected_Files[0]
+                if cookie_file.lower().endswith('.txt'):
+                    self.cookie = Cookie()
+                    with open(cookie_file, 'r') as f:
+                        data = f.read()
+                        self.cookie.cookie_data = data
+                        f.close()
+                    self.cookie.absolute_file_path = cookie_file
+                    self.status_info_label.setText(f'Cookies file loaded: {cookie_file}')
+                    self.status_info_label.setStyleSheet('color: green')
+                else:
+                    Log.error('Failed to load file. Is it actually a text file?')
+        except Exception as ex:
+            Log.error('Failed to open cookie File.')
+            Log.error(ex)
 
     # noinspection PyUnresolvedReferences
-    def setupOnClickListeners(self):
+    def setup_onclick_listeners(self):
         self.btn_file_path.clicked.connect(self.choose_download_destination)
         self.btn_download.clicked.connect(self.on_click_download_button)
         self.btn_cookies.clicked.connect(self.open_cookie_file)
 
 
-def main():
-    global application_path, app
+# def main():
+
+
+if __name__ == '__main__':
+    global app
     try:
         os.chdir(os.path.dirname(__file__))
         QDir.addSearchPath('icons', '../icons/')
@@ -176,7 +206,3 @@ def main():
         sys.exit(app.exec())
     except SystemExit as e:
         Log.error(f'Exit with return code: {e}')
-
-
-if __name__ == '__main__':
-    main()
