@@ -14,7 +14,7 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))  # PYTHONPATH needs to be inserted.
 from src.models import Cookie
 from src.Utils import get_new_value
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(filename='main.log', encoding='utf-8', level=logging.INFO)
 Log = logging.getLogger(__name__)
 
 
