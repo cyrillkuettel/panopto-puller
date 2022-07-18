@@ -6,14 +6,14 @@ from PyQt6.QtCore import *
 from PyQt6.QtCore import QThread
 from PyQt6.QtGui import QIcon, QAction
 from PyQt6.QtWidgets import QApplication, QWidget, QMenu, QToolButton, QStyle
-
 from PyQt6.QtWidgets import QPushButton, QLabel, QLineEdit, QProgressBar, QVBoxLayout, QHBoxLayout, QFileDialog
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))  # PYTHONPATH needs to be inserted. This enables running 'python
+# main.py' from the project's root directory.
 from src.models import Cookie
 from src.Utils import get_new_value
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.dirname(SCRIPT_DIR))  # PYTHONPATH needs to be inserted. This enables running this script
-# from the command line, from any directory.
 logging.basicConfig(level=logging.DEBUG)
 Log = logging.getLogger(__name__)
 
@@ -171,7 +171,6 @@ class Window(QWidget):
                     'quiet': True, 'no_warnings': True, 'nocheckcertificate': True, 'format': 'best'}
 
         self.generic_download(ydl_opts, the_thread=self.thread_no_cookie)
-
 
     def pHook(self, d):  # yt-dlp callback
         if d['status'] == 'downloading':
