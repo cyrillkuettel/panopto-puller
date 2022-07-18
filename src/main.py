@@ -14,7 +14,13 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))  # PYTHONPATH needs to be inserted.
 from src.models import Cookie
 from src.Utils import get_new_value
 
-logging.basicConfig(filename='main.log', encoding='utf-8', level=logging.INFO)
+logging.basicConfig(handlers=[
+    logging.FileHandler("debug.log"),
+    logging.StreamHandler()
+],
+    encoding='utf-8',
+    level=logging.NOTSET)  # show all logs
+
 Log = logging.getLogger(__name__)
 
 
@@ -181,6 +187,7 @@ class Window(QWidget):
             print('download completed')
 
     def open_cookie_file(self):
+        Log.debug("Opening cookie file")
         try:
             dialog = QFileDialog()
             dialog.setFileMode(QFileDialog.FileMode.AnyFile)
@@ -190,6 +197,7 @@ class Window(QWidget):
             if dialog.exec():
                 selected_Files = dialog.selectedFiles()
                 cookie_file = selected_Files[0]
+                Log.info(f'cookie file: {cookie_file}')
                 if cookie_file.lower().endswith('.txt'):
                     self.cookie = Cookie()
                     with open(cookie_file, 'r') as f:
