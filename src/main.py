@@ -1,17 +1,18 @@
 import logging
 import sys
 import os
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.dirname(SCRIPT_DIR))  # To work running from everywhere, PYTHONPATH needs to be inserted
 import yt_dlp
 from PyQt6.QtCore import *
 from PyQt6.QtCore import QThread
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QApplication, QWidget
 from PyQt6.QtWidgets import QPushButton, QLabel, QLineEdit, QProgressBar, QVBoxLayout, QHBoxLayout, QFileDialog
-
 from src.models import Cookie
+from src.Utils import get_new_value
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))  # PYTHONPATH needs to be inserted. This enables running this script
+# from the command line, from any directoy.
 logging.basicConfig(level=logging.DEBUG)
 Log = logging.getLogger(__name__)
 
@@ -28,7 +29,7 @@ class Window(QWidget):
         self.status_info_label = None  # Shows information about the curent state
 
         self.thread = QThread()
-        self.thread.started.connect(self.start_download)
+        self.thread.started.connect(self.start_download_with_cookie)
         self.cookie = None
 
         self.create_window()
@@ -37,26 +38,32 @@ class Window(QWidget):
 
     def create_window(self):
         global app
-
-
-        self.setWindowTitle('Panopto Downloader')
+        self.setWindowTitle('Panopto Puller')
         self.setWindowIcon(QIcon('icons:flat.png'))
-        if not app:
-            width = int(app.primaryScreen().size().width() * 0.42)
-            height = int(app.primaryScreen().size().height() * 0.089)
-        else:
-            width = int(app.primaryScreen().size().width() * 0.42)
-            height = int(app.primaryScreen().size().height() * 0.089)
-        Log.info(width)
-        Log.info(height)
-        self.setFixedSize(width, height)
 
+        try:
+            width = int(app.primaryScreen().size().width() * 0.42)
+            height = int(app.primaryScreen().size().height() * 0.089)
+            self.setup_frame(app.primaryScreen().availableGeometry().center())
+        except NameError:
+            width = int(1920 * 0.42)
+            height = int(1080 * 0.089)
+            self.setup_frame(QPoint(996, 553))
+        finally:
+            self.setFixedSize(width, height)
+
+    def setup_frame(self, point: QPoint):
         frame = self.frameGeometry()
-        frame.moveCenter(app.primaryScreen().availableGeometry().center())
+        frame.moveCenter(point)
         self.move(frame.topLeft())
 
     def create_widgets_and_layout(self):
         global application_path
+        try:
+            application_path
+        except NameError:
+            application_path = os.path.dirname(__file__)
+
         v_box = QVBoxLayout()
 
         # line 1
@@ -82,7 +89,7 @@ class Window(QWidget):
         h_box2 = QHBoxLayout()
         self.progress_bar: QProgressBar = QProgressBar()
         self.progress_bar.setValue(0)
-        self.progress_bar.setMaximum(1000)
+        self.progress_bar.setMaximum(100)
         h_box2.addWidget(self.progress_bar)
         v_box.addLayout(h_box2)
         v_box.addStretch()
@@ -100,10 +107,10 @@ class Window(QWidget):
         self.le_file_path.setText(file_path)
 
     def on_click_download_button(self):
-        if self.all_input_valid():
+        if self.check_valid_input():
             self.thread.start()
 
-    def all_input_valid(self):
+    def check_valid_input(self):
         if self.cookie is None:
             self.status_info_label.setText('No cookies file loaded')
             self.status_info_label.setStyleSheet('color: red')
@@ -115,7 +122,7 @@ class Window(QWidget):
             return False
         return True
 
-    def start_download(self):
+    def start_download_with_cookie(self):
 
         ydl_opts = {'outtmpl': self.le_file_path.text() + '/%(title)s.%(ext)s', 'progress_hooks': [self.pHook],
                     'quiet': True, 'no_warnings': True, 'nocheckcertificate': True, 'format': 'best',
@@ -135,29 +142,11 @@ class Window(QWidget):
 
     def pHook(self, d):  # yt-dlp callback
         if d['status'] == 'downloading':
-            self.parse_json_and_update_progressbar(d)
-
+            progressbar_val = get_new_value(d)
+            self.progress_bar.setValue(progressbar_val)
         elif d['status'] == 'finished':
             self.progress_bar.setValue(100)
             print('download completed')
-
-    def parse_json_and_update_progressbar(self, d):
-        """
-
-        :param d: Current progress hook from youtube-dl (information in json)
-        :return: The value to be written in the progress bar
-        """
-        with open('../tests/d.json', 'w') as f:
-            import json
-            f.write(json.dumps(d))
-            f.close()
-        extracted_string = d['_percent_str'].strip()[:-2]
-        print(extracted_string)
-        try:
-            new_value = float(extracted_string) * 10
-            self.progress_bar.setValue(new_value)
-        except ValueError:
-            Log.error("Value Error: Not a float")
 
     def open_cookie_file(self):
         try:
@@ -189,9 +178,6 @@ class Window(QWidget):
         self.btn_file_path.clicked.connect(self.choose_download_destination)
         self.btn_download.clicked.connect(self.on_click_download_button)
         self.btn_cookies.clicked.connect(self.open_cookie_file)
-
-
-# def main():
 
 
 if __name__ == '__main__':
