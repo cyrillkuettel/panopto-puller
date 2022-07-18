@@ -2,45 +2,51 @@ import os
 import pytest
 import logging
 from pathlib import Path
+import json
 
 Log = logging.getLogger(__name__)
 
 
-def get_percent_str(d):
-    return d['_percent_str'].strip()[:-1]
+def string_to_dict(d):
+    json1_data: dict = json.loads(d)
+    return json1_data
 
 
-def test_parsing_percent_str():
+def test_extracting_percent_value_from_json():
     Log.warning("---------------------------starting")
-    txt = Path('d.json').read_text()
+    d = Path('d.json').read_text().strip()
+    assert d not in ('', None)
+    as_dict = string_to_dict(d)
+    assert isinstance(as_dict, dict)
+    assert '_percent_str' in as_dict
 
 
-def parse_json_and_update_progressbar(d):
-    extracted_string = get_percent_str(d)
+def get_new_progressbar_value(percent):
     try:
-        new_value = float(extracted_string) * 10
-        return new_value
+        new_progressbar_value = int(float(percent))
+        return new_progressbar_value
     except ValueError as e:
-        Log.error("ValueError")
+        Log.error("ValueError. Raising the exception")
         raise e
 
 
-@pytest.mark.skip(reason="no way of currently testing this")
+def get_percent_str(d):
+    percent_text = d['_percent_str']
+    left_text = percent_text.partition("%")[0]
+    n = len(left_text)
+    return left_text[n - 5:n]
+
+
 def test_parsing_json():
-    with open('d.json', 'r') as f:
-        data = f.read()
-    parse_json_and_update_progressbar(data)
+    yt_dlp_hook = Path('d.json').read_text()  # information about the current download that we receive from yt-dlp
+    yt_dlp_hook_dictionary = string_to_dict(yt_dlp_hook)
+    extracted_percent_string = get_percent_str(yt_dlp_hook_dictionary)
+    actual_length = len(extracted_percent_string)
+    Log.error(f"extracted_percent_string = {extracted_percent_string}")
+    assert actual_length <= 5  # for example: '100.0' as string
+    assert actual_length >= 3
+    value = get_new_progressbar_value(extracted_percent_string)
+    assert 0 <= value <= 100
 
 
-"""
-@pytest.fixture
-def app(qtbot):
-    test_hello_app = src.main.Window()
-    qtbot.addWidget(test_hello_app)
-    return test_hello_app
-"""
 
-if __name__ == '__main__':
-    Log.info(' About to start the tests ')
-    pytest.main(args=[os.path.abspath(__file__)])
-    Log.info(' Done executing the tests ')
