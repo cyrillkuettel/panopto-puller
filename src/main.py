@@ -5,7 +5,7 @@ import yt_dlp
 from PyQt6.QtCore import *
 from PyQt6.QtCore import QThread
 from PyQt6.QtGui import QIcon, QAction
-from PyQt6.QtWidgets import QApplication, QWidget, QMenu, QToolButton
+from PyQt6.QtWidgets import QApplication, QWidget, QMenu, QToolButton, QStyle
 
 from PyQt6.QtWidgets import QPushButton, QLabel, QLineEdit, QProgressBar, QVBoxLayout, QHBoxLayout, QFileDialog
 from src.models import Cookie
@@ -21,6 +21,8 @@ Log = logging.getLogger(__name__)
 class Window(QWidget):
     def __init__(self):
         super().__init__()
+        self.no_cookie_btn_download_action = None
+        self.default_btn_download_action = None
         self.label_url = None
         self.menu = None
         self.le_file_path = None
@@ -31,8 +33,11 @@ class Window(QWidget):
         self.progress_bar = None
         self.status_info_label = None  # Shows information about the curent state
 
-        self.thread = QThread()
-        self.thread.started.connect(self.start_download_with_cookie)
+        self.thread_cookie = QThread()
+        self.thread_cookie.started.connect(self.start_download_with_cookie)
+        self.thread_no_cookie = QThread()
+        self.thread_no_cookie.started.connect(self.start_download_without_cookie)
+
         self.cookie = None
 
         self.create_window()
@@ -75,19 +80,15 @@ class Window(QWidget):
         self.btn_cookies.setIcon(QIcon('icons:cookies.ico'))
         self.btn_file_path = QPushButton()
         self.btn_file_path.setIcon(QIcon('icons:choose-file-icon-16.png'))
+
         self.menu = QMenu()
-        self.menu.addAction('test1')
-        self.menu.addAction('test2')
+        self.no_cookie_btn_download_action = QAction('Download without cookie', self)
+        self.menu.addAction(self.no_cookie_btn_download_action)
         self.btn_download = QToolButton(self)
         self.btn_download.setMenu(self.menu)
-        # self.btn_download.setText("Download")
-
-        button_action = QAction("Download", self)
+        self.default_btn_download_action = QAction('Download', self)
         self.btn_download.setPopupMode(QToolButton.ToolButtonPopupMode.MenuButtonPopup)
-        mode = self.btn_download.popupMode()
-        Log.warning(str(mode))  
-        button_action.triggered.connect(self.on_click_default_action)
-        self.btn_download.setDefaultAction(button_action)
+        self.btn_download.setDefaultAction(self.default_btn_download_action)
 
         self.le_file_path = QLineEdit(application_path)
         self.le_file_path.setMaximumWidth(200)
@@ -122,12 +123,13 @@ class Window(QWidget):
         file_path = QFileDialog.getExistingDirectory()
         self.le_file_path.setText(file_path)
 
-    def on_click_default_action(self):
-        Log.warning("Default action triggered.")
+    def on_click_no_cookie_action(self):
+        if self.valid_input():
+            self.thread_no_cookie.start()
 
-    def on_click_download_button(self):
+    def on_click_default_action(self):
         if self.valid_input() and self.cookie_loaded():
-            self.thread.start()
+            self.thread_cookie.start()
 
     def valid_input(self):
         if self.le_url.text() == '':
@@ -149,6 +151,9 @@ class Window(QWidget):
                     'quiet': True, 'no_warnings': True, 'nocheckcertificate': True, 'format': 'best',
                     'cookies': self.cookie.absolute_file_path}
 
+        self.generic_download(ydl_opts, the_thread=self.thread_cookie)
+
+    def generic_download(self, ydl_opts, the_thread):
         try:
             self.status_info_label.setText(f'download from {self.le_url.text()}')
             self.btn_download.setEnabled(False)
@@ -159,7 +164,14 @@ class Window(QWidget):
             self.progress_bar.setValue(0)
         finally:
             self.btn_download.setEnabled(True)
-            self.thread.terminate()
+            the_thread.terminate()
+
+    def start_download_without_cookie(self):
+        ydl_opts = {'outtmpl': self.le_file_path.text() + '/%(title)s.%(ext)s', 'progress_hooks': [self.pHook],
+                    'quiet': True, 'no_warnings': True, 'nocheckcertificate': True, 'format': 'best'}
+
+        self.generic_download(ydl_opts, the_thread=self.thread_no_cookie)
+
 
     def pHook(self, d):  # yt-dlp callback
         if d['status'] == 'downloading':
@@ -197,8 +209,9 @@ class Window(QWidget):
     # noinspection PyUnresolvedReferences
     def setup_onclick_listeners(self):
         self.btn_file_path.clicked.connect(self.choose_download_destination)
-        # self.btn_download.clicked.connect(self.on_click_download_button)
         self.btn_cookies.clicked.connect(self.open_cookie_file)
+        self.no_cookie_btn_download_action.triggered.connect(self.on_click_no_cookie_action)
+        self.default_btn_download_action.triggered.connect(self.on_click_default_action)
 
 
 if __name__ == '__main__':

@@ -4,12 +4,12 @@ import logging
 Log = logging.getLogger(__name__)
 
 
-def get_new_value(d) -> int:
+def get_new_value(yt_dlp_hook_dictionary) -> int:
     """
     :param d: Current progress hook from youtube-dl (information in json)
     :return: The value to be written in the progress bar
     """
-    yt_dlp_hook_dictionary = string_to_dict(d)
+    #yt_dlp_hook_dictionary = string_to_dict(d)
     extracted_percent_string = get_percent_str(yt_dlp_hook_dictionary)
     value = get_new_progressbar_value(extracted_percent_string)
     return value
