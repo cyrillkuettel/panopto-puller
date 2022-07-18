@@ -1,6 +1,8 @@
 # panopto-puller
 A minmalist UI for yt-dlp (youtube-dl) written in PyQt.
 
+![Screenshot](varia/Screenshot.png)
+
 # Start local dev environment
 - Use a virtual environment, tested with Python=3.10
 - pip install -r requirements.txt  
