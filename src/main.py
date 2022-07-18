@@ -19,7 +19,7 @@ logging.basicConfig(handlers=[
     logging.StreamHandler()
 ],
     encoding='utf-8',
-    level=logging.NOTSET)  # show all logs
+    level=logging.NOTSET)  # shows all logs
 
 Log = logging.getLogger(__name__)
 
@@ -136,6 +136,9 @@ class Window(QWidget):
     def on_click_default_action(self):
         if self.valid_input() and self.cookie_loaded():
             self.thread_cookie.start()
+        else:
+            Log.error("Failed to start default action, there where failed input validation checks")
+
 
     def valid_input(self):
         if self.le_url.text() == '':
@@ -148,11 +151,11 @@ class Window(QWidget):
         if self.cookie is None:
             self.status_info_label.setText('No cookies file loaded')
             self.status_info_label.setStyleSheet('color: red')
-            Log.error("Need to provide a cookie")
             return False
+        return True
 
     def start_download_with_cookie(self):
-
+        Log.info("start_download_with_cookie")
         ydl_opts = {'outtmpl': self.le_file_path.text() + '/%(title)s.%(ext)s', 'progress_hooks': [self.pHook],
                     'quiet': True, 'no_warnings': True, 'nocheckcertificate': True, 'format': 'best',
                     'cookies': self.cookie.absolute_file_path}
@@ -160,6 +163,8 @@ class Window(QWidget):
         self.generic_download(ydl_opts, the_thread=self.thread_cookie)
 
     def generic_download(self, ydl_opts, the_thread):
+        Log.info("generic_download")
+
         try:
             self.status_info_label.setText(f'download from {self.le_url.text()}')
             self.btn_download.setEnabled(False)
@@ -195,8 +200,8 @@ class Window(QWidget):
             dialog.setNameFilters(["Text Files (*.txt)"])
 
             if dialog.exec():
-                selected_Files = dialog.selectedFiles()
-                cookie_file = selected_Files[0]
+                selected_files = dialog.selectedFiles()
+                cookie_file = selected_files[0]
                 Log.info(f'cookie file: {cookie_file}')
                 if cookie_file.lower().endswith('.txt'):
                     self.cookie = Cookie()
