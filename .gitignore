@@ -185,3 +185,6 @@ fabric.properties
 # .idea
 *.mp4
 cookies.txt
+*.part
+*.ytdl
+*.part-Frag26
