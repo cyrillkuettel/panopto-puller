@@ -188,6 +188,7 @@ class Window(QWidget):
         self.generic_download(ydl_opts, the_thread=self.thread_no_cookie)
 
     def pHook(self, d):  # yt-dlp callback
+        self.status_info_label = f"Saving to {d['filename']}"
         if d['status'] == 'downloading':
             progressbar_val = get_new_value(d)
             self.progress_bar.setValue(progressbar_val)
