@@ -54,14 +54,15 @@ class Window(QWidget):
         global app
         self.setWindowTitle('Panopto Puller')
         self.setWindowIcon(QIcon('icons:flat.png'))
-
+        const_w = 0.42
+        const_h = 0.13
         try:
-            width = int(app.primaryScreen().size().width() * 0.42)
-            height = int(app.primaryScreen().size().height() * 0.089)
+            width = int(app.primaryScreen().size().width() * const_w)
+            height = int(app.primaryScreen().size().height() * const_h)
             self.setup_frame(app.primaryScreen().availableGeometry().center())
         except NameError:
-            width = int(1920 * 0.42)
-            height = int(1080 * 0.089)
+            width = int(1920 * const_w)
+            height = int(1080 * const_h)
             self.setup_frame(QPoint(996, 553))
         finally:
             self.setFixedSize(width, height)
@@ -120,6 +121,7 @@ class Window(QWidget):
         # line 3 (printing status information)
         h_box3 = QHBoxLayout()
         self.status_info_label = QLabel('', self)
+        self.status_info_label.setWordWrap(True)
         self.status_info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         h_box3.addWidget(self.status_info_label)
         v_box.addLayout(h_box3)
@@ -135,10 +137,10 @@ class Window(QWidget):
 
     def on_click_default_action(self):
         if self.valid_input() and self.cookie_loaded():
+            Log.debug("Starting Default Action: thread_cookie")
             self.thread_cookie.start()
         else:
             Log.error("Failed to start default action, there where failed input validation checks")
-
 
     def valid_input(self):
         if self.le_url.text() == '':
@@ -155,23 +157,25 @@ class Window(QWidget):
         return True
 
     def start_download_with_cookie(self):
-        Log.info("start_download_with_cookie")
+        Log.debug("start_download_with_cookie")
+        Log.debug(f"cookie_absolute_file_path == {self.cookie.absolute_file_path}")
         ydl_opts = {'outtmpl': self.le_file_path.text() + '/%(title)s.%(ext)s', 'progress_hooks': [self.pHook],
                     'quiet': True, 'no_warnings': True, 'nocheckcertificate': True, 'format': 'best',
-                    'cookies': self.cookie.absolute_file_path}
+                    'cookiefile': self.cookie.absolute_file_path}
 
         self.generic_download(ydl_opts, the_thread=self.thread_cookie)
 
     def generic_download(self, ydl_opts, the_thread):
-        Log.info("generic_download")
+        Log.debug("generic_download")
 
         try:
             self.status_info_label.setText(f'download from {self.le_url.text()}')
             self.btn_download.setEnabled(False)
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([self.le_url.text()])
-        except yt_dlp.utils.DownloadError or Exception as e:
-            self.status_info_label.setText(f'Error: {e}')
+        except yt_dlp.utils.DownloadError or Exception as ex:
+            self.status_info_label.setStyleSheet('color: red')
+            self.status_info_label.setText(f'Error: {ex}')
             self.progress_bar.setValue(0)
         finally:
             self.btn_download.setEnabled(True)
