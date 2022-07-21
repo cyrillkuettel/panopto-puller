@@ -26,6 +26,7 @@ logging.basicConfig(handlers=[
 
 Log = logging.getLogger(__name__)
 
+conf_file_name = "config.yaml"
 
 class Window(QWidget):
     def __init__(self):
@@ -220,7 +221,7 @@ class Window(QWidget):
                 with open(cookie_file, 'r') as f:
                     data = f.read()
                     self.cookie.cookie_data = data
-                    f.close()
+                # persist path to cookie as well here
                 self.cookie.absolute_file_path = cookie_file
                 self.status_info_label.setText(f'Cookies file loaded: {cookie_file}')
                 self.status_info_label.setStyleSheet('color: green')

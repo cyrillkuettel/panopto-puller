@@ -1,10 +1,9 @@
 import json
+import yaml
 import logging
 from pathlib import Path
 
 Log = logging.getLogger(__name__)
-
-conf_file_name = "config.yaml"
 
 
 def get_new_value(yt_dlp_hook_dictionary) -> int:
@@ -39,7 +38,30 @@ def string_to_dict(d):
     return json1_data
 
 
-def create_dir_if_not_exists(base_path: Path):
+def create_dir_if_not_exists(base_path: Path, conf_file_name: str):
     config_file_to_write: Path = base_path / conf_file_name
     with open(config_file_to_write, "a+") as f:
         f.write("# configurations for downloader. Do not move this file. \n")
+
+
+def write_file_cookie_path(config_file_path: Path, value: str):
+    try:
+        with open(str(config_file_path)) as f:
+            data = yaml.load(f, Loader=yaml.FullLoader)
+        data['absolute_file_path'] = value
+        with open(config_file_path, 'w') as f:
+            yaml.dump(data, f)
+    except IOError as err:
+        Log.error(f"failed persist_cookie_path in Path {config_file_path} and value {value}")
+        Log.error(err)
+
+
+def read_file_cookie_path(config_file_path: Path):
+    try:
+        with open(str(config_file_path)) as f:
+            data = yaml.load(f, Loader=yaml.FullLoader)
+        return data['absolute_file_path']
+    except IOError as err:
+        Log.error(f"failed persist_cookie_path in Path {config_file_path}")
+        Log.error(err)
+

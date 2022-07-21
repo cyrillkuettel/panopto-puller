@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 
 from src.Utils import *
+import os
 
 Log = logging.getLogger(__name__)
 
@@ -29,6 +30,11 @@ def test_parsing_json():
 
 
 @pytest.fixture
+def absolute_base_path() -> Path:
+    return Path(__file__).parent.resolve()
+
+
+@pytest.fixture
 def sample_cookie_path():
     return "/home/cyrill/Desktop/cookies.txt"
 
@@ -48,3 +54,16 @@ def test_parsing_yaml_for_cookie_path(get_yaml_file, sample_cookie_path):
     Log.error(sample_config)
     data = yaml.safe_load(sample_config)
     assert data['absolute_file_path'] == sample_cookie_path
+
+
+def test_yaml_parsing(absolute_base_path):
+    actual_config_path = absolute_base_path / "config.yaml"
+    value_for_yaml = "/home/cyrill/cookies.txt"
+    #  write some data to the config file
+    write_file_cookie_path(config_file_path=actual_config_path, value=value_for_yaml)
+    #  read the data from config file
+    new_absolute_cookie_path = read_file_cookie_path(config_file_path=actual_config_path)
+    assert new_absolute_cookie_path == value_for_yaml
+
+
+
