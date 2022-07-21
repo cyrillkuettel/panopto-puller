@@ -28,6 +28,7 @@ Log = logging.getLogger(__name__)
 
 conf_file_name = "config.yaml"
 
+
 class Window(QWidget):
     def __init__(self):
         super().__init__()
@@ -175,7 +176,6 @@ class Window(QWidget):
 
     def generic_download(self, ydl_opts, the_thread):
         Log.debug("generic_download")
-
 
         try:
             self.status_info_label.setText(f'download from {self.le_url.text()}')
