@@ -3,3 +3,6 @@ https://unibas.cloud.panopto.eu/Panopto/Pages/Sessions/List.aspx#folderID=%22154
 
 # Single Video
 https://unibas.cloud.panopto.eu/Panopto/Pages/Viewer.aspx?id=e8ed0dd4-6722-4f05-9c44-ae36011a33e2
+
+# yt-dlp test video
+https://www.youtube.com/watch?v=BaW_jenozKc

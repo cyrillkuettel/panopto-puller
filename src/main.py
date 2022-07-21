@@ -129,7 +129,8 @@ class Window(QWidget):
 
     def choose_download_destination(self):
         file_path = QFileDialog.getExistingDirectory()
-        self.le_file_path.setText(file_path)
+        if not file_path == "":
+            self.le_file_path.setText(file_path)
 
     def on_click_no_cookie_action(self):
         if self.valid_input():
@@ -143,6 +144,9 @@ class Window(QWidget):
             Log.error("Failed to start default action, there where failed input validation checks")
 
     def valid_input(self):
+        if self.le_file_path.text() == "":
+            Log.error(f"No destination url provided provided. Saving to {application_path}")
+            self.le_file_path.setText(application_path)  # if no path given, save to where the .exe is
         if self.le_url.text() == '':
             Log.error("No URL provided")
             self.status_info_label.setText('No URL provided')
@@ -167,6 +171,7 @@ class Window(QWidget):
 
     def generic_download(self, ydl_opts, the_thread):
         Log.debug("generic_download")
+
 
         try:
             self.status_info_label.setText(f'download from {self.le_url.text()}')
