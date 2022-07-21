@@ -1,6 +1,8 @@
 import logging
 import sys
 import os
+from pathlib import Path
+
 import yt_dlp
 from PyQt6.QtCore import *
 from PyQt6.QtCore import QThread
@@ -13,6 +15,7 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))  # PYTHONPATH needs to be inserted.
 # main.py' from the project's root directory.
 from src.models import Cookie
 from src.Utils import get_new_value
+from src.Utils import create_dir_if_not_exists
 
 logging.basicConfig(handlers=[
     logging.FileHandler("debug.log"),
@@ -245,7 +248,9 @@ if __name__ == '__main__':
             os.environ['path'] += ';' + os.path.dirname(__file__) + r'\ffmpeg'
         else:
             application_path = os.path.dirname(__file__)
-
+        config_path = Path(application_path)
+        create_dir_if_not_exists(Path(application_path))
+        Log.debug(f"config file created in {str(config_path)}")
         app = QApplication([])
         window = Window()
         window.show()
