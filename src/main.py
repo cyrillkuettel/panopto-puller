@@ -208,17 +208,14 @@ class Window(QWidget):
                 selected_files = dialog.selectedFiles()
                 cookie_file = selected_files[0]
                 Log.info(f'cookie file: {cookie_file}')
-                if cookie_file.lower().endswith('.txt'):
-                    self.cookie = Cookie()
-                    with open(cookie_file, 'r') as f:
-                        data = f.read()
-                        self.cookie.cookie_data = data
-                        f.close()
-                    self.cookie.absolute_file_path = cookie_file
-                    self.status_info_label.setText(f'Cookies file loaded: {cookie_file}')
-                    self.status_info_label.setStyleSheet('color: green')
-                else:
-                    Log.error('Failed to load file. Is it actually a text file?')
+                self.cookie = Cookie()
+                with open(cookie_file, 'r') as f:
+                    data = f.read()
+                    self.cookie.cookie_data = data
+                    f.close()
+                self.cookie.absolute_file_path = cookie_file
+                self.status_info_label.setText(f'Cookies file loaded: {cookie_file}')
+                self.status_info_label.setStyleSheet('color: green')
         except Exception as ex:
             Log.error('Failed to open cookie File.')
             Log.error(ex)
