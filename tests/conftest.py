@@ -17,6 +17,6 @@ def sample_cookie_path():
 def get_yaml_file(sample_cookie_path):
     absolute_file_path = sample_cookie_path
     return (
-        '#Sample application configuration as if we have read the yaml from disk\n'
-        f'absolute_file_path: {absolute_file_path}\n'
+        "#Sample application configuration as if we have read the yaml from disk\n"
+        f"absolute_file_path: {absolute_file_path}\n"
     )

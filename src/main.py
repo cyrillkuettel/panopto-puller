@@ -2,27 +2,34 @@ import logging
 import sys
 import os
 from pathlib import Path
-
 import yt_dlp
-from PyQt6.QtCore import *
-from PyQt6.QtCore import QThread
+from PyQt6.QtCore import QThread, QPoint, QDir, Qt
 from PyQt6.QtGui import QIcon, QAction
-from PyQt6.QtWidgets import QApplication, QWidget, QMenu, QToolButton, QStyle
-from PyQt6.QtWidgets import QPushButton, QLabel, QLineEdit, QProgressBar, QVBoxLayout, QHBoxLayout, QFileDialog
+from PyQt6.QtWidgets import QApplication, QWidget, QMenu, QToolButton
+from PyQt6.QtWidgets import (
+    QPushButton,
+    QLabel,
+    QLineEdit,
+    QProgressBar,
+    QVBoxLayout,
+    QHBoxLayout,
+    QFileDialog,
+)
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.dirname(SCRIPT_DIR))  # PYTHONPATH needs to be inserted. This enables running 'python
-# main.py' from the project's root directory.
+sys.path.append(
+    os.path.dirname(SCRIPT_DIR)
+)  # PYTHONPATH needs to be inserted. This enables running 'python main.py' from the
+# project's root directory.
 from src.models import Cookie
 from src.Utils import get_new_value
 from src.Utils import create_dir_if_not_exists
 
-logging.basicConfig(handlers=[
-    logging.FileHandler("debug.log"),
-    logging.StreamHandler()
-],
-    encoding='utf-8',
-    level=logging.NOTSET)  # shows all logs
+logging.basicConfig(
+    handlers=[logging.FileHandler("debug.log"), logging.StreamHandler()],
+    encoding="utf-8",
+    level=logging.NOTSET,
+)  # shows all logs
 
 Log = logging.getLogger(__name__)
 
@@ -57,8 +64,8 @@ class Window(QWidget):
 
     def create_window(self):
         global app
-        self.setWindowTitle('Panopto Puller')
-        self.setWindowIcon(QIcon('icons:flat.png'))
+        self.setWindowTitle("Panopto Puller")
+        self.setWindowIcon(QIcon("icons:flat.png"))
         const_w = 0.42
         const_h = 0.13
         try:
@@ -87,18 +94,18 @@ class Window(QWidget):
         v_box = QVBoxLayout()
 
         # line 1
-        self.label_url = QLabel('URL', self)
+        self.label_url = QLabel("URL", self)
         self.btn_cookies = QPushButton()
-        self.btn_cookies.setIcon(QIcon('icons:cookies.ico'))
+        self.btn_cookies.setIcon(QIcon("icons:cookies.ico"))
         self.btn_file_path = QPushButton()
-        self.btn_file_path.setIcon(QIcon('icons:choose-file-icon-16.png'))
+        self.btn_file_path.setIcon(QIcon("icons:choose-file-icon-16.png"))
 
         self.menu = QMenu()
-        self.no_cookie_btn_download_action = QAction('Download without cookie', self)
+        self.no_cookie_btn_download_action = QAction("Download without cookie", self)
         self.menu.addAction(self.no_cookie_btn_download_action)
         self.btn_download = QToolButton(self)
         self.btn_download.setMenu(self.menu)
-        self.default_btn_download_action = QAction('Download', self)
+        self.default_btn_download_action = QAction("Download", self)
         self.btn_download.setPopupMode(QToolButton.ToolButtonPopupMode.MenuButtonPopup)
         self.btn_download.setDefaultAction(self.default_btn_download_action)
 
@@ -125,7 +132,7 @@ class Window(QWidget):
 
         # line 3 (printing status information)
         h_box3 = QHBoxLayout()
-        self.status_info_label = QLabel('', self)
+        self.status_info_label = QLabel("", self)
         self.status_info_label.setWordWrap(True)
         self.status_info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         h_box3.addWidget(self.status_info_label)
@@ -146,31 +153,43 @@ class Window(QWidget):
             Log.debug("Starting Default Action: thread_cookie")
             self.thread_cookie.start()
         else:
-            Log.error("Failed to start default action, there where failed input validation checks")
+            Log.error(
+                "Failed to start default action, due to failed input validation checks"
+            )
 
     def valid_input(self):
         if self.le_file_path.text() == "":
-            Log.error(f"No destination url provided provided. Saving to {application_path}")
-            self.le_file_path.setText(application_path)  # if no path given, save to where the .exe is
-        if self.le_url.text() == '':
+            Log.error(
+                f"No destination url provided provided. Saving to {application_path}"
+            )
+            self.le_file_path.setText(
+                application_path
+            )  # if no path given, save to where the .exe is
+        if self.le_url.text() == "":
             Log.error("No URL provided")
-            self.status_info_label.setText('No URL provided')
+            self.status_info_label.setText("No URL provided")
             return False
         return True
 
     def cookie_loaded(self):
         if self.cookie is None:
-            self.status_info_label.setText('No cookies file loaded')
-            self.status_info_label.setStyleSheet('color: red')
+            self.status_info_label.setText("No cookies file loaded")
+            self.status_info_label.setStyleSheet("color: red")
             return False
         return True
 
     def start_download_with_cookie(self):
         Log.debug("start_download_with_cookie")
         Log.debug(f"cookie_absolute_file_path == {self.cookie.absolute_file_path}")
-        ydl_opts = {'outtmpl': self.le_file_path.text() + '/%(title)s.%(ext)s', 'progress_hooks': [self.pHook],
-                    'quiet': True, 'no_warnings': True, 'nocheckcertificate': True, 'format': 'best',
-                    'cookiefile': self.cookie.absolute_file_path}
+        ydl_opts = {
+            "outtmpl": self.le_file_path.text() + "/%(title)s.%(ext)s",
+            "progress_hooks": [self.pHook],
+            "quiet": True,
+            "no_warnings": True,
+            "nocheckcertificate": True,
+            "format": "best",
+            "cookiefile": self.cookie.absolute_file_path,
+        }
 
         self.generic_download(ydl_opts, the_thread=self.thread_cookie)
 
@@ -178,32 +197,38 @@ class Window(QWidget):
         Log.debug("generic_download")
 
         try:
-            self.status_info_label.setText(f'download from {self.le_url.text()}')
+            self.status_info_label.setText(f"download from {self.le_url.text()}")
             self.btn_download.setEnabled(False)
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([self.le_url.text()])
         except yt_dlp.utils.DownloadError or Exception as ex:
-            self.status_info_label.setStyleSheet('color: red')
-            self.status_info_label.setText(f'Error: {ex}')
+            self.status_info_label.setStyleSheet("color: red")
+            self.status_info_label.setText(f"Error: {ex}")
             self.progress_bar.setValue(0)
         finally:
             self.btn_download.setEnabled(True)
             the_thread.terminate()
 
     def start_download_without_cookie(self):
-        ydl_opts = {'outtmpl': self.le_file_path.text() + '/%(title)s.%(ext)s', 'progress_hooks': [self.pHook],
-                    'quiet': True, 'no_warnings': True, 'nocheckcertificate': True, 'format': 'best'}
+        ydl_opts = {
+            "outtmpl": self.le_file_path.text() + "/%(title)s.%(ext)s",
+            "progress_hooks": [self.pHook],
+            "quiet": True,
+            "no_warnings": True,
+            "nocheckcertificate": True,
+            "format": "best",
+        }
 
         self.generic_download(ydl_opts, the_thread=self.thread_no_cookie)
 
     def pHook(self, d):  # yt-dlp callback
         self.status_info_label = f"Saving to {d['filename']}"
-        if d['status'] == 'downloading':
+        if d["status"] == "downloading":
             progressbar_val = get_new_value(d)
             self.progress_bar.setValue(progressbar_val)
-        elif d['status'] == 'finished':
+        elif d["status"] == "finished":
             self.progress_bar.setValue(100)
-            print('download completed')
+            print("download completed")
 
     def open_cookie_file(self):
         Log.debug("Opening cookie file")
@@ -216,45 +241,47 @@ class Window(QWidget):
             if dialog.exec():
                 selected_files = dialog.selectedFiles()
                 cookie_file = selected_files[0]
-                Log.info(f'cookie file: {cookie_file}')
+                Log.info(f"cookie file: {cookie_file}")
                 self.cookie = Cookie()
-                with open(cookie_file, 'r') as f:
+                with open(cookie_file, "r") as f:
                     data = f.read()
                     self.cookie.cookie_data = data
                 # persist path to cookie as well here
                 self.cookie.absolute_file_path = cookie_file
-                self.status_info_label.setText(f'Cookies file loaded: {cookie_file}')
-                self.status_info_label.setStyleSheet('color: green')
+                self.status_info_label.setText(f"Cookies file loaded: {cookie_file}")
+                self.status_info_label.setStyleSheet("color: green")
         except Exception as ex:
-            Log.error('Failed to open cookie File.')
+            Log.error("Failed to open cookie File.")
             Log.error(ex)
 
     # noinspection PyUnresolvedReferences
     def setup_onclick_listeners(self):
         self.btn_file_path.clicked.connect(self.choose_download_destination)
         self.btn_cookies.clicked.connect(self.open_cookie_file)
-        self.no_cookie_btn_download_action.triggered.connect(self.on_click_no_cookie_action)
+        self.no_cookie_btn_download_action.triggered.connect(
+            self.on_click_no_cookie_action
+        )
         self.default_btn_download_action.triggered.connect(self.on_click_default_action)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     global app
     try:
         os.chdir(os.path.dirname(__file__))
-        QDir.addSearchPath('icons', '../icons/')
+        QDir.addSearchPath("icons", "../icons/")
 
-        if getattr(sys, 'frozen', False):  # for pyinstaller
+        if getattr(sys, "frozen", False):  # for pyinstaller
             application_path = os.path.dirname(sys.executable)
-            os.environ['QT_PLUGIN_PATH'] = os.path.dirname(__file__) + r'\plugins'
-            os.environ['path'] += ';' + os.path.dirname(__file__) + r'\ffmpeg'
+            os.environ["QT_PLUGIN_PATH"] = os.path.dirname(__file__) + r"\plugins"
+            os.environ["path"] += ";" + os.path.dirname(__file__) + r"\ffmpeg"
         else:
             application_path = os.path.dirname(__file__)
         config_path = Path(application_path)
-        create_dir_if_not_exists(Path(application_path),conf_file_name)
+        create_dir_if_not_exists(Path(application_path), conf_file_name)
         Log.debug(f"config file created in {str(config_path)}")
         app = QApplication([])
         window = Window()
         window.show()
         sys.exit(app.exec())
     except SystemExit as e:
-        Log.error(f'Exit with return code: {e}')
+        Log.error(f"Exit with return code: {e}")
