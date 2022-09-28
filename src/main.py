@@ -250,7 +250,7 @@ if __name__ == '__main__':
         else:
             application_path = os.path.dirname(__file__)
         config_path = Path(application_path)
-        create_dir_if_not_exists(Path(application_path))
+        create_dir_if_not_exists(Path(application_path),conf_file_name)
         Log.debug(f"config file created in {str(config_path)}")
         app = QApplication([])
         window = Window()
