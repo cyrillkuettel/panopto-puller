@@ -6,7 +6,7 @@ from src.Utils import (
     get_percent_str,
     get_new_progressbar_value,
     read_file_cookie_path,
-    write_file_cookie_path
+    write_file_cookie_path,
 )
 
 Log = logging.getLogger(__name__)
@@ -48,8 +48,7 @@ def test_yaml_parsing(absolute_base_path):
     actual_config_path = absolute_base_path / "config.yaml"
     value_for_yaml = "/home/cyrill/cookies.txt"
     #  write some data to the config file
-    write_file_cookie_path(config_file_path=actual_config_path,
-                           value=value_for_yaml)
+    write_file_cookie_path(config_file_path=actual_config_path, value=value_for_yaml)
     #  read the data from config file
     new_absolute_cookie_path = read_file_cookie_path(
         config_file_path=actual_config_path

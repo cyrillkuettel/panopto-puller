@@ -15,6 +15,7 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QFileDialog,
 )
+from PyQt6.QtWidgets import QStyleFactory
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(
@@ -49,10 +50,11 @@ class Window(QWidget):
         self.btn_cookies = None
         self.le_url = None
         self.progress_bar = None
-        self.status_info_label = None  # Shows information about the curent state
+        self.status_info_label = None
 
         self.thread_cookie = QThread()
         self.thread_cookie.started.connect(self.start_download_with_cookie)
+
         self.thread_no_cookie = QThread()
         self.thread_no_cookie.started.connect(self.start_download_without_cookie)
 
@@ -126,6 +128,7 @@ class Window(QWidget):
         self.progress_bar: QProgressBar = QProgressBar()
         self.progress_bar.setValue(0)
         self.progress_bar.setMaximum(100)
+
         h_box2.addWidget(self.progress_bar)
         v_box.addLayout(h_box2)
         v_box.addStretch()
@@ -160,11 +163,11 @@ class Window(QWidget):
     def valid_input(self):
         if self.le_file_path.text() == "":
             Log.error(
-                f"No destination url provided provided. Saving to {application_path}"
+                f"No destination url provided provided. Fallback savign path  to"
+                f" {application_path}"
             )
-            self.le_file_path.setText(
-                application_path
-            )  # if no path given, save to where the .exe is
+            self.le_file_path.setText(application_path)
+
         if self.le_url.text() == "":
             Log.error("No URL provided")
             self.status_info_label.setText("No URL provided")
@@ -201,7 +204,7 @@ class Window(QWidget):
             self.btn_download.setEnabled(False)
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([self.le_url.text()])
-        except yt_dlp.utils.DownloadError or Exception as ex:
+        except yt_dlp.utils.DownloadError as ex:
             self.status_info_label.setStyleSheet("color: red")
             self.status_info_label.setText(f"Error: {ex}")
             self.progress_bar.setValue(0)

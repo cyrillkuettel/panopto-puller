@@ -30,7 +30,7 @@ def get_percent_str(d):
     percent_text = d["_percent_str"]
     left_text = percent_text.partition("%")[0]
     n = len(left_text)
-    return left_text[n - 5: n]
+    return left_text[n - 5 : n]
 
 
 def string_to_dict(d):
@@ -39,7 +39,7 @@ def string_to_dict(d):
 
 
 def create_dir_if_not_exists(base_path: Path, conf_file_name: str):
-    config_file_to_write: Path = base_path / conf_file_name
+    config_file_to_write = base_path / conf_file_name
     with open(config_file_to_write, "a+") as f:
         f.write("# configurations for downloader. Do not move this file. \n")
 
