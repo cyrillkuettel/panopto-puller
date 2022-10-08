@@ -5,8 +5,11 @@ from functools import partial
 from black import format_str, FileMode
 from pathlib import Path
 
-
-class RepeatedTimer(object):
+""" This is a helper tool which just formats the source code with black every N seconds.
+    It was an interesting experiment. However, retrospectively it's unnecessary 
+    complicated. I'd rather use a pre-commit hook or something like that. 
+"""
+class RepeatedTimer:
     def __init__(self, *args, **kwargs):  # Autostarts
 
         for key, value in kwargs.items():
