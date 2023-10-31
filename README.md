@@ -9,8 +9,8 @@ A minmalist UI for yt-dlp (youtube-dl) written in PyQt.
 
  ```bash 
  # For example with conda:
-conda create -y --name panopto-puller python=3.10
-conda activate panopto-puller
+conda create -y --name pp python=3.11
+conda activate pp 
 conda install pip
 pip install -r requirements.txt
 ```

@@ -2,7 +2,6 @@ import json
 import yaml
 import logging
 from pathlib import Path
-
 Log = logging.getLogger(__name__)
 
 
@@ -40,8 +39,9 @@ def string_to_dict(d):
 
 def create_dir_if_not_exists(base_path: Path, conf_file_name: str):
     config_file_to_write = base_path / conf_file_name
-    with open(config_file_to_write, "a+") as f:
-        f.write("# configurations for downloader. Do not move this file. \n")
+    if not Path.is_file(config_file_to_write):
+        config_file_to_write.parent.mkdir(exist_ok=True, parents=True)
+        config_file_to_write.write_text("# configurations for downloader.\n")
 
 
 def write_file_cookie_path(config_file_path: Path, value: str):

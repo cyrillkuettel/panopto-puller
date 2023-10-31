@@ -2,8 +2,9 @@ import logging
 import sys
 import os
 from pathlib import Path
+from AppThreadChild import AppThreadChild
 import yt_dlp
-from PyQt6.QtCore import QThread, QPoint, QDir, Qt
+from PyQt6.QtCore import QThread, QPoint, QDir, Qt, QRect
 from PyQt6.QtGui import QIcon, QAction
 from PyQt6.QtWidgets import QApplication, QWidget, QMenu, QToolButton
 from PyQt6.QtWidgets import (
@@ -16,6 +17,7 @@ from PyQt6.QtWidgets import (
     QFileDialog,
 )
 from PyQt6.QtWidgets import QStyleFactory
+# from qt_material import apply_stylesheet
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(
@@ -37,7 +39,7 @@ Log = logging.getLogger(__name__)
 conf_file_name = "config.yaml"
 
 
-class Window(QWidget):
+class PanoptoPuller(AppThreadChild):
     def __init__(self):
         super().__init__()
         self.no_cookie_btn_download_action = None
@@ -54,12 +56,10 @@ class Window(QWidget):
 
         self.thread_cookie = QThread()
         self.thread_cookie.started.connect(self.start_download_with_cookie)
-
         self.thread_no_cookie = QThread()
         self.thread_no_cookie.started.connect(self.start_download_without_cookie)
 
         self.cookie = None
-
         self.create_window()
         self.create_widgets_and_layout()
         self.setup_onclick_listeners()
@@ -73,18 +73,13 @@ class Window(QWidget):
         try:
             width = int(app.primaryScreen().size().width() * const_w)
             height = int(app.primaryScreen().size().height() * const_h)
-            self.setup_frame(app.primaryScreen().availableGeometry().center())
-        except NameError:
+            point = app.primaryScreen().availableGeometry().center()
+            self.setFixedSize(width, height)
+        except NameError as ex:
+            Log.debug(ex)
             width = int(1920 * const_w)
             height = int(1080 * const_h)
-            self.setup_frame(QPoint(996, 553))
-        finally:
             self.setFixedSize(width, height)
-
-    def setup_frame(self, point: QPoint):
-        frame = self.frameGeometry()
-        frame.moveCenter(point)
-        self.move(frame.topLeft())
 
     def create_widgets_and_layout(self):
         global application_path
@@ -200,7 +195,7 @@ class Window(QWidget):
         Log.debug("generic_download")
 
         try:
-            self.status_info_label.setText(f"download from {self.le_url.text()}")
+            self.status_info_label.setText(f"download from " f"{self.le_url.text()}")
             self.btn_download.setEnabled(False)
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([self.le_url.text()])
@@ -257,7 +252,6 @@ class Window(QWidget):
             Log.error("Failed to open cookie File.")
             Log.error(ex)
 
-    # noinspection PyUnresolvedReferences
     def setup_onclick_listeners(self):
         self.btn_file_path.clicked.connect(self.choose_download_destination)
         self.btn_cookies.clicked.connect(self.open_cookie_file)
@@ -267,8 +261,8 @@ class Window(QWidget):
         self.default_btn_download_action.triggered.connect(self.on_click_default_action)
 
 
-if __name__ == "__main__":
-    global app
+def main():
+    global application_path, app
     try:
         os.chdir(os.path.dirname(__file__))
         QDir.addSearchPath("icons", "../icons/")
@@ -281,10 +275,15 @@ if __name__ == "__main__":
             application_path = os.path.dirname(__file__)
         config_path = Path(application_path)
         create_dir_if_not_exists(Path(application_path), conf_file_name)
-        Log.debug(f"config file created in {str(config_path)}")
         app = QApplication([])
-        window = Window()
+        window = PanoptoPuller()
+        # apply_stylesheet(app, theme="light_blue.xml")
         window.show()
         sys.exit(app.exec())
     except SystemExit as e:
         Log.error(f"Exit with return code: {e}")
+
+
+if __name__ == "__main__":
+    global app
+    main()

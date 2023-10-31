@@ -1,0 +1,11 @@
+Many good ideas
+
+- [ ] don't allow pressing button to download,
+if no cookie set, this fails in any case.
+
+- [ ]  Make the interface vertical
+
+- [ ] only show download location once it is downloaded. 
+Provide a widget that shows download location (maybe pop up) 
+this widget contains a link to the download 
+location. User only has to press on it. Very quick transition to desktop.  
